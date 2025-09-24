@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI客服 - 社區管理系統</title>
+    
+    <!-- Material UI CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #1a1a1a;
+            --secondary-color: #2d2d2d;
+            --accent-color: #ffd700;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+            --warning-color: #ff9800;
+            --info-color: #2196f3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: rgba(45, 45, 45, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .chat-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--success-color);
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 1rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--accent-color);
+            color: var(--primary-color);
+        }
+
+        .message.ai .message-avatar {
+            background: var(--info-color);
+            color: white;
+        }
+
+        .message-content {
+            background: rgba(45, 45, 45, 0.8);
+            border-radius: 15px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background: var(--accent-color);
+            color: var(--primary-color);
+            border-color: var(--accent-color);
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .message.user .message-time {
+            color: rgba(26, 26, 26, 0.7);
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .quick-action-btn:hover {
+            background: var(--accent-color);
+            color: var(--primary-color);
+        }
+
+        .chat-input-container {
+            background: rgba(45, 45, 45, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-top: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 25px;
+            padding: 1rem 1.5rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            background: var(--accent-color);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            background: #ffed4e;
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome-title {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        .welcome-suggestions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .suggestion-card {
+            background: rgba(45, 45, 45, 0.8);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .suggestion-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .suggestion-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .chat-header {
+                padding: 1rem;
+            }
+
+            .chat-input-container {
+                padding: 1rem;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .welcome-suggestions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Chat Header -->
+    <header class="chat-header">
+        <div class="header-left">
+            <button class="back-btn" onclick="goBack()">
+                <span class="material-icons">arrow_back</span>
+            </button>
+            <div>
+                <h1 class="chat-title">AI智能客服</h1>
+                <div class="ai-status">
+                    <div class="status-dot"></div>
+                    <span>線上服務中</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Chat Container -->
+    <div class="chat-container">
+        <!-- Welcome Message -->
+        <div id="welcomeMessage" class="welcome-message">
+            <h2 class="welcome-title">👋 您好！我是社區AI助手</h2>
+            <p>我可以幫助您解決社區相關問題，提供各種服務資訊。</p>
+            
+            <div class="welcome-suggestions">
+                <div class="suggestion-card" onclick="sendQuickMessage('我想查看最新公告')">
+                    <div class="material-icons suggestion-icon">campaign</div>
+                    <h3>查看公告</h3>
+                    <p>最新社區公告和通知</p>
+                </div>
+                <div class="suggestion-card" onclick="sendQuickMessage('我要報修設備')">
+                    <div class="material-icons suggestion-icon">build</div>
+                    <h3>設備報修</h3>
+                    <p>報告設備故障問題</p>
+                </div>
+                <div class="suggestion-card" onclick="sendQuickMessage('我想查詢管理費')">
+                    <div class="material-icons suggestion-icon">account_balance</div>
+                    <h3>管理費查詢</h3>
+                    <p>查看繳費狀況</p>
+                </div>
+                <div class="suggestion-card" onclick="sendQuickMessage('緊急情況怎麼辦')">
+                    <div class="material-icons suggestion-icon">emergency</div>
+                    <h3>緊急協助</h3>
+                    <p>緊急情況處理指南</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here dynamically -->
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+            <span>AI助手正在輸入</span>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+            <textarea 
+                class="chat-input" 
+                id="chatInput" 
+                placeholder="輸入您的問題..."
+                rows="1"
+                onkeydown="handleKeyDown(event)"
+            ></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <span class="material-icons">send</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = "https://oyydhfvgtmghvnbkvczr.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWRoZnZndG1naHZuYmt2Y3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTMwMTIsImV4cCI6MjA3MzE2OTAxMn0.fgz_Vl7bZ1rtrttOAQcTlymMgHfhiY2NDo3qEnBT1og";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        let chatHistory = [];
+
+        // Initialize chat
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            adjustTextareaHeight();
+        });
+
+        async function checkAuth() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'auth.html';
+                return;
+            }
+            currentUser = user;
+        }
+
+        function goBack() {
+            if (document.referrer) {
+                window.history.back();
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+            adjustTextareaHeight();
+        }
+
+        function adjustTextareaHeight() {
+            const textarea = document.getElementById('chatInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('chatInput').value = message;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Hide welcome message
+            document.getElementById('welcomeMessage').classList.add('hidden');
+
+            // Add user message
+            addMessage(message, 'user');
+            
+            // Clear input
+            input.value = '';
+            adjustTextareaHeight();
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Simulate AI response delay
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = generateAIResponse(message);
+                addMessage(response.text, 'ai', response.actions);
+            }, 1000 + Math.random() * 2000);
+        }
+
+        function addMessage(text, sender, actions = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'user' ? (currentUser?.email?.charAt(0).toUpperCase() || 'U') : 'AI';
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.innerHTML = `
+                <div>${text}</div>
+                <div class="message-time">${new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</div>
+                ${actions ? `<div class="quick-actions">${actions.map(action => 
+                    `<button class="quick-action-btn" onclick="${action.onclick}">${action.text}</button>`
+                ).join('')}</div>` : ''}
+            `;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            messagesContainer.appendChild(messageDiv);
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Store in chat history
+            chatHistory.push({ text, sender, timestamp: new Date() });
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        function generateAIResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+
+            // 公告相關
+            if (message.includes('公告') || message.includes('通知')) {
+                return {
+                    text: '我來為您查看最新的社區公告。目前有以下重要公告：<br><br>📢 中秋烤肉活動 - 9月10日晚上7點<br>🔧 電梯維護通知 - A棟電梯9月15日維護<br>💰 管理費調整通知 - 10月起調整<br><br>您想了解哪個公告的詳細內容嗎？',
+                    actions: [
+                        { text: '查看全部公告', onclick: 'navigateTo("announcements")' },
+                        { text: '參與投票', onclick: 'navigateTo("vote")' }
+                    ]
+                };
+            }
+
+            // 報修相關
+            if (message.includes('報修') || message.includes('維修') || message.includes('故障')) {
+                return {
+                    text: '我可以協助您進行設備報修。請告訴我：<br><br>1. 故障設備類型（電梯、水電、門禁等）<br>2. 具體故障情況<br>3. 您的住戶單位<br><br>或者您可以直接前往報修頁面填寫詳細資訊。',
+                    actions: [
+                        { text: '前往報修頁面', onclick: 'navigateTo("maintenance")' },
+                        { text: '查看報修進度', onclick: 'navigateTo("maintenance-status")' }
+                    ]
+                };
+            }
+
+            // 管理費相關
+            if (message.includes('管理費') || message.includes('繳費') || message.includes('帳單')) {
+                return {
+                    text: '關於管理費查詢，我可以幫您：<br><br>💳 查看本月帳單<br>📊 查看繳費記錄<br>📋 了解費用明細<br>⏰ 設定繳費提醒<br><br>請選擇您需要的服務，或前往財務頁面查看詳細資訊。',
+                    actions: [
+                        { text: '查看帳單', onclick: 'navigateTo("finance")' },
+                        { text: '繳費記錄', onclick: 'navigateTo("payment-history")' }
+                    ]
+                };
+            }
+
+            // 緊急情況
+            if (message.includes('緊急') || message.includes('急救') || message.includes('119') || message.includes('110')) {
+                return {
+                    text: '🚨 緊急情況處理指南：<br><br>🏥 醫療急救：撥打 119<br>🚔 治安問題：撥打 110<br>🔥 火災事故：撥打 119<br>💧 水電急修：聯繫管理室<br><br>如果是生命安全相關的緊急情況，請立即撥打相關電話！',
+                    actions: [
+                        { text: '撥打119', onclick: 'callEmergency("119")' },
+                        { text: '撥打110', onclick: 'callEmergency("110")' },
+                        { text: '聯繫管理室', onclick: 'callEmergency("management")' }
+                    ]
+                };
+            }
+
+            // 訪客相關
+            if (message.includes('訪客') || message.includes('包裹') || message.includes('快遞')) {
+                return {
+                    text: '關於訪客和包裹管理：<br><br>👥 訪客登記：可提前登記訪客資訊<br>📦 包裹查詢：查看包裹收發狀況<br>🔔 到貨通知：設定包裹到貨提醒<br><br>需要我協助您處理哪項服務呢？',
+                    actions: [
+                        { text: '訪客登記', onclick: 'navigateTo("visitor-register")' },
+                        { text: '包裹查詢', onclick: 'navigateTo("package-inquiry")' }
+                    ]
+                };
+            }
+
+            // 會議活動相關
+            if (message.includes('會議') || message.includes('活動') || message.includes('聚會')) {
+                return {
+                    text: '社區會議和活動資訊：<br><br>📅 即將舉行的活動：中秋烤肉活動<br>📝 會議記錄：可查看歷次會議紀錄<br>🎉 活動報名：參與社區活動<br><br>您想了解哪方面的資訊呢？',
+                    actions: [
+                        { text: '查看活動', onclick: 'navigateTo("events")' },
+                        { text: '會議記錄', onclick: 'navigateTo("meetings")' }
+                    ]
+                };
+            }
+
+            // 住戶資訊相關
+            if (message.includes('住戶') || message.includes('聯絡') || message.includes('資料')) {
+                return {
+                    text: '住戶資訊服務：<br><br>👤 個人資料更新<br>📞 聯絡資訊修改<br>🏠 住戶名冊查詢<br>🔐 密碼重設<br><br>請選擇您需要的服務項目。',
+                    actions: [
+                        { text: '更新資料', onclick: 'navigateTo("profile")' },
+                        { text: '聯絡資訊', onclick: 'navigateTo("contacts")' }
+                    ]
+                };
+            }
+
+            // 預設回應
+            const defaultResponses = [
+                {
+                    text: '感謝您的提問！我是社區AI助手，可以協助您處理以下事務：<br><br>📢 查看社區公告和投票<br>🔧 設備報修和維護查詢<br>💰 管理費和繳費相關<br>👥 訪客登記和包裹查詢<br>🚨 緊急情況處理<br>📅 會議活動資訊<br><br>請告訴我您需要什麼協助？',
+                    actions: [
+                        { text: '查看公告', onclick: 'sendQuickMessage("我想查看最新公告")' },
+                        { text: '設備報修', onclick: 'sendQuickMessage("我要報修設備")' },
+                        { text: '管理費查詢', onclick: 'sendQuickMessage("我想查詢管理費")' }
+                    ]
+                },
+                {
+                    text: '我理解您的需求，讓我為您提供相關資訊。如果您有具體問題，請詳細描述，我會盡力協助您解決。<br><br>您也可以直接前往相關頁面處理事務：',
+                    actions: [
+                        { text: '前往儀表板', onclick: 'navigateTo("dashboard")' },
+                        { text: '聯繫管理室', onclick: 'callEmergency("management")' }
+                    ]
+                }
+            ];
+
+            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+
+        function navigateTo(section) {
+            const sectionMap = {
+                'dashboard': 'dashboard.html',
+                'announcements': 'dashboard.html#announcements',
+                'maintenance': 'dashboard.html#maintenance',
+                'finance': 'dashboard.html#finance',
+                'events': 'dashboard.html#events',
+                'meetings': 'dashboard.html#meetings',
+                'visitors': 'dashboard.html#visitors'
+            };
+
+            const url = sectionMap[section] || 'dashboard.html';
+            window.open(url, '_blank');
+        }
+
+        function callEmergency(type) {
+            const numbers = {
+                '119': '119',
+                '110': '110',
+                'management': '02-12345678'
+            };
+
+            const number = numbers[type];
+            if (number) {
+                if (confirm(`確定要撥打 ${number} 嗎？`)) {
+                    window.open(`tel:${number}`);
+                }
+            }
+        }
+
+        // Auto-resize textarea
+        document.getElementById('chatInput').addEventListener('input', adjustTextareaHeight);
+
+        // Focus input on load
+        window.addEventListener('load', function() {
+            document.getElementById('chatInput').focus();
+        });
+    </script>
+</body>
+</html>
